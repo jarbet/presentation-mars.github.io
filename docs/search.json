@@ -1,0 +1,114 @@
+[
+  {
+    "objectID": "presentation-mars.html#motivation",
+    "href": "presentation-mars.html#motivation",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Motivation",
+    "text": "Motivation\n\nBuild a flexible yet interpretable model like:\n\n\n\\[\\begin{equation}\n\\boldsymbol{y} = f(\\boldsymbol{x}_1, ..., \\boldsymbol{x}_P) + \\boldsymbol{e}\n\\end{equation}\\]\n\n\nGeneral linear models (GLM), e.g. linear or logistic regression are interpretable and can be flexible, but you need to decide:\n\nWhich predictors to include?\nFor each predictor: linear or non-linear effect?\nDo predictors interact? If yes, 2-way, 3-way, …?\n\n\n\n\n\n\n\n\n\n\n\n\nMARS (multivariate adaptive regression splines) automatically determines all of this for you 😃"
+  },
+  {
+    "objectID": "presentation-mars.html#piecewise-linear-functions",
+    "href": "presentation-mars.html#piecewise-linear-functions",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Piecewise linear functions",
+    "text": "Piecewise linear functions\n\nMARS uses simple piecewise linear functions (“splines”) that can approximate complex relationships\n\n\n\nKnots: points in \\(\\boldsymbol{X}\\) where effect on \\(\\boldsymbol{Y}\\) (slope) changes\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nEveringham, Y. L., J. Sexton, and Jimmy White. “An introduction to multivariate adaptive regression splines for the cane industry.” Proceedings of the 2011 Conference of the Australian Society of Sugar Cane Technologists. 2011.\nhttps://jekel.me/2017/Fit-a-piecewise-linear-function-to-data/\nhttps://flexbooks.ck12.org/cbook/ck-12-interactive-algebra-1-for-ccss/section/1.4/primary/lesson/piecewise-linear-functions-alg-1-ccss/"
+  },
+  {
+    "objectID": "presentation-mars.html#decisions-for-piecewise-linear-splines",
+    "href": "presentation-mars.html#decisions-for-piecewise-linear-splines",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Decisions for piecewise linear splines",
+    "text": "Decisions for piecewise linear splines\n\n\nNumber of knots\nLocation of knots\nHow the slopes change at each knot\n\n\nMARS automatically decides all 3! 😃"
+  },
+  {
+    "objectID": "presentation-mars.html#hinge-function",
+    "href": "presentation-mars.html#hinge-function",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Hinge function",
+    "text": "Hinge function\n\nMain building block of MARS used to construct the piecewise linear functions\nFor predictor \\(x\\) and knot at \\(x=t\\), hinge fn has 2 parts (Hastie et al. 2009):\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nHinge is a pair of terms: Left \\((t-x)_+\\) and Right \\((x-t)_+\\)\nIf MARS selects a given hinge fn, it is input to a GLM and estimates 2 coefficients: \\(\\beta_{Left}(t-x)_+ + \\beta_{Right}(x-t)\\)"
+  },
+  {
+    "objectID": "presentation-mars.html#section",
+    "href": "presentation-mars.html#section",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "",
+    "text": "Suppose knot \\(t = 0.5\\). Here is what the hinge \\(\\beta_{L}(t-x)_+ + \\beta_{R}(x-t)\\) looks like for various coeffients:"
+  },
+  {
+    "objectID": "presentation-mars.html#mars-algorithm",
+    "href": "presentation-mars.html#mars-algorithm",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "MARS algorithm",
+    "text": "MARS algorithm\n\nForward: build a large # hinges that overfit the data\nBackward: use backward VS to prune the model\nEstimate the final coefficients in lm/glm\n\n\n\n\n\n\n\n\n http://www.milbo.org/doc/earth-notes.pdf"
+  },
+  {
+    "objectID": "presentation-mars.html#forward-step",
+    "href": "presentation-mars.html#forward-step",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Forward step",
+    "text": "Forward step\n\n\\(\\boldsymbol{M}\\) = set of terms in model. Start with just an intercept \\(\\{1\\}\\).\n\\(\\boldsymbol{C}\\) = set of candidate hinge functions to add to model. Contains hinge functions at each observed value for each predictor (\\(N * P * 2\\) total terms):\n\n\n\\[\\begin{equation}\n\\boldsymbol{C} = \\big\\{(X_j - t)_+, (t - X_j)_+\\big\\} \\\\ t \\in \\{x_{1j}, x_{2j}, ..., x_{Nj}\\}; \\ j = 1,2, ..., P\n\\end{equation}\\]\n\n\n\n“At each stage we consider all products of a candidate hinge in \\(\\boldsymbol{C}\\) with a hinge in the model \\(\\boldsymbol{M}\\). The product that decreases the residual error the most is added into the current model.” (Hastie et al. 2009)\n\n\n\nThus at each step, it’s possible to add:\n\nNew variable\nNew knot to an existing variable in the model\nInteraction term between 2 or more variables\n\n\n\nIterate.. stop once maximum number of terms is reached"
+  },
+  {
+    "objectID": "presentation-mars.html#backwards-step",
+    "href": "presentation-mars.html#backwards-step",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Backwards step",
+    "text": "Backwards step\n\nForward step purposely builds a large model that overfits\nBackward step prunes the model to reduce overfitting:\n\n\n\nThe term whose removal causes the smallest increase in residual squared error is deleted from the model at each stage, producing an estimated best model \\(f_\\lambda\\) of each size (number of terms) \\(λ\\) (Hastie et al. 2009)\n\n\n\nThe best models of size 1, 2, …, \\(\\lambda_{max}\\) features are identified\n\n\nBest? Measured by fast generalized cross validation (GCV) or more accurate but slower K-fold CV\n\n\n\nGCV provides a convenient approximation to leave-one out cross-validation for linear models [without needing to split/resample/refit data](Hastie et al. 2009)"
+  },
+  {
+    "objectID": "presentation-mars.html#tuning-mars",
+    "href": "presentation-mars.html#tuning-mars",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Tuning MARS",
+    "text": "Tuning MARS\nPotential tuning parameters:\n\nMax degree of interactions allowed (set to 1 for none).\nMax # terms in the Forward step (nk)\nMax # of retained terms in Backward step (nprune)\n\n\nSimplest tuning strategy:\n\nBasically involves 0 tuning parameters, with a few caveats:\nSet degree to a moderate value like 5 and use default nk\n\nGCV is used to automatically select nprune\nIf “Reached max number of terms” then increase nk\nIf many 5-way interactions, then increase degree\n\n\n\n\nMore advanced tuning stratigies use K-fold CV to optimize over a grid of all 3 parameters."
+  },
+  {
+    "objectID": "presentation-mars.html#example",
+    "href": "presentation-mars.html#example",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Example",
+    "text": "Example\n\nOutcome = forced expiatory volume in liters (fev)\nN = 654 youths age 3-19 from East Boston during 1970’s\nPotential predictors: age, height, sex, smoking status\nGoal: use MARS for both feature selection and engineering"
+  },
+  {
+    "objectID": "presentation-mars.html#fitting-mars-with-earth-r-package",
+    "href": "presentation-mars.html#fitting-mars-with-earth-r-package",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Fitting MARS with earth R package",
+    "text": "Fitting MARS with earth R package\nBy default, uses GCV to select optimal number of terms\n\nlibrary(earth);\nfit.gcv &lt;- earth(\n    formula = fev ~.,\n    data = fev,\n    degree = 5,\n    keepxy = TRUE\n    );\nprint(fit.gcv);\n\nSelected 6 of 17 terms, and 4 of 4 predictors\nTermination condition: Reached nk 21\nImportance: height.inches, sexMale, age, smokeYes\nNumber of terms at each degree of interaction: 1 3 2\nGCV 0.1487769    RSS 93.32458    GRSq 0.8024061    RSq 0.8098985\n\n\n\nGRSq normalizes GCV from 0 to 1, similar to adjusted \\(R^2\\).\nSelected all 4 predictors with 6 hinges to maximize GRSq\n\n\n\n\nplot(fit.gcv, which = c(1));"
+  },
+  {
+    "objectID": "presentation-mars.html#predictor-effects",
+    "href": "presentation-mars.html#predictor-effects",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Predictor effects",
+    "text": "Predictor effects\nLet’s explore the predictor effects from fit.gcv:\n\nSelected hinge functions and \\(\\hat{\\beta}\\):\n\n\n                                    fev\n(Intercept)                  2.74759130\nh(65-height.inches)         -0.09188745\nh(age-8)                     0.08327821\nh(height.inches-65)*sexMale  0.24942931\nh(height.inches-68)         -0.14391813\nh(age-8)*smokeYes           -0.02834601\n\n\n\n\nVariable importance scores:\n\n\nevimp(fit.gcv);\n\n              nsubsets   gcv    rss\nheight.inches        5 100.0  100.0\nsexMale              4  46.1   46.5\nage                  3  16.5   17.9\nsmokeYes             1   3.6    5.5\n\n\n\n\n\nPartial dependence plots:\n\nplotmo() can be used to plot the estimated effects\nI prefer the pdp R package for making similar plots:"
+  },
+  {
+    "objectID": "presentation-mars.html#extensions",
+    "href": "presentation-mars.html#extensions",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Extensions",
+    "text": "Extensions\n\nMARS/earth can be used for continuous, count, binary or multinomial outcomes\n\nIf multinomial, it’s recommended to also try using MARS with Flexable Discriminant Analaysis (FDA) - see “Notes on the earth package” for details.\n\nIn theory, MARS can handle missing values and time-to-event outcomes. However, I’m not aware of any R implementations that support this.\ncaret’s bagged MARS can improve prediction performance at the expense of interpretability"
+  },
+  {
+    "objectID": "presentation-mars.html#summary",
+    "href": "presentation-mars.html#summary",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Summary",
+    "text": "Summary\nMARS automatically handles:\n\nFeature engineering: what type of features to include? linear or non-linear, additive or interaction?\nFeature selection: given a high-dimensional set of initial features, which should you include?\n\n\nOther benefits:\n\nFast\nEasy to tune: simplest approach has 0 tuning parameters\nInterpretable\nHandles mixed numeric/categorical predictors without needing further transformation (similar to tree-methods)\nRobust to outliers in the predictors\n\n\n\nDownsides?\n\n\nIn my experience, although MARS is more interpretable, it generally has lower predictive performance compared to Random Forests. Bagging and/or random variable sets (like RF) might improve this, but needs further investigation.\nNo statistical inference (p-values or confidence intervals). I have ideas for how to do this, talk with me if interested.\nAlthough MARS in theory can handle missing values or time-to-event outcomes, I’m not aware of any free software that supports this. In contrast, many packages for tree-based models supports missing values and time-to-event outcomes (e.g. randomForestSRC R package)."
+  },
+  {
+    "objectID": "presentation-mars.html#questions",
+    "href": "presentation-mars.html#questions",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "Questions?",
+    "text": "Questions?"
+  },
+  {
+    "objectID": "presentation-mars.html#references",
+    "href": "presentation-mars.html#references",
+    "title": "Automatic feature selection and engineering with MARS",
+    "section": "References",
+    "text": "References\n\n\n“Notes on the earth package”\nOriginal MARS paper: Friedman, Jerome H. “Multivariate adaptive regression splines.” The annals of statistics 19.1 (1991): 1-67.\n\nA slightly more accessible Intro: Friedman, Jerome H., and Charles B. Roosen. “An introduction to multivariate adaptive regression splines.” Statistical methods in medical research 4.3 (1995): 197-217.\n\nIMO, the Elements of Statistical Learning chapter on MARS is the best short introduction\n\n\n\n\n\n\n\n\nHastie, Trevor, Robert Tibshirani, Jerome H Friedman, and Jerome H Friedman. 2009. The Elements of Statistical Learning: Data Mining, Inference, and Prediction. Vol. 2. Springer."
+  }
+]
